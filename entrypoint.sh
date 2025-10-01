@@ -82,7 +82,7 @@ cat << EOF > /singbox.json
     {
       "type": "socks",
       "tag": "socks-in",
-      "listen": "$(ip -o -f inet address show eth0 | awk '/scope global/ {print $4}' | cut -d/ -f1)",
+      "listen": "$(ip -o -f inet address show | awk 'END {print $4}' | cut -d/ -f1)",
       "listen_port": 1080
     }
   ],

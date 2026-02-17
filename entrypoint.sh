@@ -52,12 +52,6 @@ cat << EOF > /singbox.json
         "detour": "bypass"
       }
     ],
-    "rules": [
-      {
-        "outbound": "any",
-        "server": "dns-local"
-      }
-    ],
     "strategy": "prefer_ipv4",
     "reverse_mapping": true
   },
@@ -90,6 +84,7 @@ cat << EOF > /singbox.json
     {
       "type": "vless",
       "tag": "vless-out",
+      "domain_resolver": "dns-local",
       "server": "${REMOTE_ADDRESS}",
       "server_port": ${REMOTE_PORT},
       "uuid": "${ID}",

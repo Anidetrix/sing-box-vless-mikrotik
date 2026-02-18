@@ -48,8 +48,7 @@ cat << EOF > /singbox.json
       },
       {
         "tag": "dns-local",
-        "address": "local",
-        "detour": "bypass"
+        "type": "local"
       }
     ],
     "strategy": "prefer_ipv4",

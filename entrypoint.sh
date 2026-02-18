@@ -84,7 +84,6 @@ cat << EOF > /singbox.json
     {
       "type": "vless",
       "tag": "vless-out",
-      "domain_resolver": "dns-local",
       "server": "${REMOTE_ADDRESS}",
       "server_port": ${REMOTE_PORT},
       "uuid": "${ID}",
@@ -110,6 +109,7 @@ cat << EOF > /singbox.json
     }
   ],
   "route": {
+    "default_domain_resolver": "dns-local",
     "auto_detect_interface": true,
     "rules": [
       {

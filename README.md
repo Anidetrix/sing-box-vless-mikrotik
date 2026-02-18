@@ -9,11 +9,11 @@ Required env variables:
 
 ```rosScript
 /container envs
-add name=vless key=REMOTE_ADDRESS value=XXX.vless-server.com
-add name=vless key=ID value=XXXX-XXXX-XXXX-XXXX
-add name=vless key=SERVER_NAME value=yahoo.com
-add name=vless key=PUBLIC_KEY value=XXXX
-add name=vless key=SHORT_ID value=XXXX
+add name=vless key=REMOTE_ADDRESS value=example.com
+add name=vless key=ID value=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+add name=vless key=SERVER_NAME value=www.example.com
+add name=vless key=PUBLIC_KEY value=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+add name=vless key=SHORT_ID value=XXXXXXXXXXXXXXXX
 ```
 
 Optional env variables:

@@ -1,15 +1,9 @@
 ARG SINGBOX_VERSION=v1.12.22
-ARG TARGETARCH
 
 FROM ghcr.io/sagernet/sing-box:${SINGBOX_VERSION} AS sing-box
 
 FROM alpine:latest AS certs
 RUN apk add --no-cache ca-certificates-bundle
-
-RUN echo "TARGETARCH is: '${TARGETARCH}'" \
-  && echo "TARGETPLATFORM is: '${TARGETPLATFORM}'" \
-  && echo "Running on platform: $TARGETPLATFORM" \
-  && if [ -z "$TARGETARCH" ]; then echo "ERROR: TARGETARCH is empty!"; exit 1; fi
 
 FROM busybox:musl
 LABEL maintainer="Anton Kudriavtsev <anidetrix@proton.me>"

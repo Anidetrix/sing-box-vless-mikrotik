@@ -6,6 +6,7 @@ FROM alpine:latest AS certs
 RUN apk add --no-cache ca-certificates-bundle
 
 FROM busybox:musl
+ARG TARGETARCH
 LABEL maintainer="Anton Kudriavtsev <anidetrix@proton.me>"
 COPY --from=sing-box /usr/local/bin/sing-box /bin/sing-box
 COPY --from=certs /etc/ssl/certs /etc/ssl/certs

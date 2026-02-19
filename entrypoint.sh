@@ -3,7 +3,7 @@
 LOG_LEVEL="${LOG_LEVEL:-warn}"
 
 # dns
-DNS="${DNS:-8.8.8.8}"
+DNS="${DNS:-8.8.8.8,8.8.4.4}"
 
 # tun
 TUN_STACK="${TUN_STACK:-system}"
@@ -139,6 +139,12 @@ mergeconf() {
 	rm -f ${logfile} "$1"
 }
 
+add_dns() {
+	local tmpfile=$(mktemp)
+	dns-gen "$1" > ${tmpfile}
+	mergeconf ${tmpfile}
+}
+
 add_rule() {
 	local IFS=,
 	local entries=""
@@ -195,6 +201,7 @@ add_rulesets() {
 	add_rule rule_set "${entries%?}"
 }
 
+add_dns ${DNS}
 [ -n "${DOMAINS}" ] && add_rule domain_suffix ${DOMAINS}
 [ -n "${RULESETS}" ] && add_rulesets ${RULESETS}
 sing-box check -c /singbox.json --disable-color || exit 1

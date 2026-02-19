@@ -21,7 +21,7 @@ Optional env variables:
 ```rosScript
 /container envs
 add name=vless key=LOG_LEVEL value=warn
-add name=vless key=DNS value=8.8.8.8
+add name=vless key=DNS value=8.8.8.8,8.8.4.4
 add name=vless key=TUN_STACK value=system
 add name=vless key=REMOTE_PORT value=443
 add name=vless key=FLOW value=xtls-rprx-vision

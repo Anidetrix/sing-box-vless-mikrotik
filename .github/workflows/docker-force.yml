@@ -14,14 +14,15 @@ on:
           - all
 
 jobs:
+  build-dns-gen:
+    uses: ./.github/workflows/dns-gen.yml
+
   build:
+    needs: build-dns-gen
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Build DNS Gen
-        uses: ./.github/workflows/dns-gen.yml
 
       - name: Set version
         id: set-version

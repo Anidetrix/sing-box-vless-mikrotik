@@ -25,7 +25,6 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: dns-gen-binaries
-          path: ./dns-gen/
 
       - name: Set version
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'

@@ -14,11 +14,11 @@ on:
           - all
 
 jobs:
-  build-dns-gen:
+  dns-gen:
     uses: ./.github/workflows/dns-gen.yml
 
   build:
-    needs: build-dns-gen
+    needs: dns-gen
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -24,6 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: DNS Gen
+        uses: actions/download-artifact@v6
+        with:
+          name: dns-gen-binaries
+          path: ./dns-gen/
+
       - name: Set version
         id: set-version
         run: |

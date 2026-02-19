@@ -20,6 +20,13 @@ jobs:
         id: up-version
         run: bash .github/workflows/update_tag.sh
 
+      - name: DNS Gen
+        if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
+        uses: actions/download-artifact@v6
+        with:
+          name: dns-gen-binaries
+          path: ./dns-gen/
+
       - name: Set version
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
         id: set-version

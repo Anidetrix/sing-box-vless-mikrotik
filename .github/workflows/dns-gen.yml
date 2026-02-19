@@ -27,14 +27,14 @@ jobs:
           path: |
             dns-gen-amd64
             dns-gen-arm64
-            dns-gen-armv7
+            dns-gen-arm
 
       - name: Compile
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target x86_64-linux-musl -femit-bin=dns-gen-amd64
           zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target aarch64-linux-musl -femit-bin=dns-gen-arm64
-          zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target arm-linux-musleabihf -femit-bin=dns-gen-armv7
+          zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target arm-linux-musleabihf -femit-bin=dns-gen-arm
 
       - name: Save
         uses: actions/cache/save@v5
@@ -43,11 +43,12 @@ jobs:
           path: |
             dns-gen-amd64
             dns-gen-arm64
-            dns-gen-armv7
+            dns-gen-arm
 
       - name: Upload
         uses: actions/upload-artifact@v6
         with:
           retention-days: 1
+          if-no-files-found: error
           name: dns-gen-binaries
           path: dns-gen-*

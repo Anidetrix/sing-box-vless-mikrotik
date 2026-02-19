@@ -17,11 +17,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Build DNS Gen
-        uses: ./.github/workflows/dns-gen.yml
-
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Build DNS Gen
+        uses: ./.github/workflows/dns-gen.yml
 
       - name: Set version
         id: set-version

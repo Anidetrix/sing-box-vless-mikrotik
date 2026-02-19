@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache/restore@v5
         id: cache
         with:
-          key: ${{ runner.os }}-${{ hashFiles('dns-gen.zig') }}
+          key: dns-gen-${{ runner.os }}-${{ hashFiles('dns-gen.zig') }}
           path: |
             dns-gen-amd64
             dns-gen-arm64

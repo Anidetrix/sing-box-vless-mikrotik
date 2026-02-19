@@ -39,18 +39,6 @@ cat << EOF > /singbox.json
     "timestamp": false
   },
   "dns": {
-    "servers": [
-      {
-        "tag": "dns-proxy",
-        "address": "${DNS}",
-        "address_resolver": "dns-local",
-        "detour": "vless-out"
-      },
-      {
-        "tag": "dns-local",
-        "type": "local"
-      }
-    ],
     "strategy": "prefer_ipv4",
     "reverse_mapping": true
   },

@@ -1,0 +1,52 @@
+name: Build DNS Gen
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "dns-gen.zig"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Restore
+        uses: actions/cache/restore@v5
+        id: cache
+        with:
+          key: ${{ runner.os }}-${{ hashFiles('dns-gen.zig') }}
+          path: |
+            dns-gen-amd64
+            dns-gen-arm64
+            dns-gen-armv7
+
+      - name: Compile
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target x86_64-linux-musl -femit-bin=dns-gen-amd64
+          zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target aarch64-linux-musl -femit-bin=dns-gen-arm64
+          zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target arm-linux-musleabihf -femit-bin=dns-gen-armv7
+
+      - name: Save
+        uses: actions/cache/save@v5
+        with:
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          path: |
+            dns-gen-amd64
+            dns-gen-arm64
+            dns-gen-armv7
+
+      - name: Upload
+        uses: actions/upload-artifact@v6
+        with:
+          retention-days: 1
+          name: dns-gen-binaries
+          path: dns-gen-*

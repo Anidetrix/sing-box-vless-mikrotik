@@ -1,7 +1,5 @@
 const std = @import("std");
 
-const Config = struct { dns: DNS };
-const DNS = struct { servers: []const Server };
 const Server = struct {
     tag: []const u8,
     type: []const u8,
@@ -61,11 +59,12 @@ pub fn main() !void {
 
     var buf: [4096]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&buf);
-    var stringifier = std.json.Stringify{
-        .writer = &stdout_writer.interface,
-        .options = .{ .whitespace = .indent_2, .emit_null_optional_fields = false },
-    };
 
-    try stringifier.write(Config{ .dns = DNS{ .servers = servers.items } });
+    try std.json.Stringify.value(
+        .{ .dns = .{ .servers = servers.items } },
+        .{ .whitespace = .indent_2, .emit_null_optional_fields = false },
+        &stdout_writer.interface,
+    );
+
     try stdout_writer.interface.flush();
 }

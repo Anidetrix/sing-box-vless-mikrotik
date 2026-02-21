@@ -24,7 +24,7 @@ pub fn main() !void {
     if (args.next()) |arg| {
         var index: usize = 1;
         var addr_iter = std.mem.splitScalar(u8, arg, ',');
-        while (addr_iter.next()) |addr| {
+        while (addr_iter.next()) |addr| : (index += 1) {
             const raw = try std.ascii.allocLowerString(allocator, addr);
             const short = std.mem.indexOf(u8, raw, "://") == null;
             const url = if (short) try std.fmt.allocPrint(allocator, "udp://{s}", .{raw}) else raw;
@@ -45,7 +45,6 @@ pub fn main() !void {
             };
 
             try servers.append(allocator, server);
-            index += 1;
         }
     }
 

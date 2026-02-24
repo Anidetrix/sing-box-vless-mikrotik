@@ -56,14 +56,10 @@ pub fn main() !void {
         .type = "local",
     });
 
-    var buf: [4096]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&buf);
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    defer stdout.flush() catch {};
 
-    try std.json.Stringify.value(
-        .{ .dns = .{ .servers = servers.items } },
-        .{ .whitespace = .indent_2, .emit_null_optional_fields = false },
-        &stdout_writer.interface,
-    );
-
-    try stdout_writer.interface.flush();
+    try std.json.Stringify.value(.{ .dns = .{ .servers = servers.items } }, .{ .whitespace = .indent_2, .emit_null_optional_fields = false }, stdout);
 }

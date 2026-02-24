@@ -5,7 +5,7 @@ FROM ghcr.io/sagernet/sing-box:${SINGBOX_VERSION} AS sing-box
 FROM alpine:latest AS builder
 RUN apk add --no-cache ca-certificates-bundle upx
 COPY --from=sing-box /usr/local/bin/sing-box /sing-box
-RUN upx --fast /sing-box
+RUN upx --fast -qq /sing-box
 
 FROM busybox:musl
 ARG TARGETARCH

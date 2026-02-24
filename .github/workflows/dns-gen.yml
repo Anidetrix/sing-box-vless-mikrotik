@@ -38,6 +38,7 @@ jobs:
           zig build-exe dns-gen.zig -O ReleaseSmall -static -fstrip -fsingle-threaded -fno-stack-check -fno-stack-protector -fomit-frame-pointer -flto -target arm-linux-musleabihf -femit-bin=dns-gen-arm
 
       - name: Save
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           key: ${{ steps.cache.outputs.cache-primary-key }}

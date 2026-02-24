@@ -14,11 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.15.2
-
       - name: Restore
         uses: actions/cache/restore@v5
         id: cache
@@ -28,6 +23,12 @@ jobs:
             dns-gen-amd64
             dns-gen-arm64
             dns-gen-arm
+
+      - name: Setup Zig
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
 
       - name: Compile
         if: steps.cache.outputs.cache-hit != 'true'

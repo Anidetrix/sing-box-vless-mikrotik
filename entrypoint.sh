@@ -65,6 +65,12 @@ cat << EOF > /singbox.json
       "tag": "socks-in",
       "listen": "$(ip -o -f inet address show | awk 'END {print $4}' | cut -d/ -f1)",
       "listen_port": 1080
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "$(ip -o -f inet address show | awk 'END {print $4}' | cut -d/ -f1)",
+      "listen_port": 10080
     }
   ],
   "outbounds": [

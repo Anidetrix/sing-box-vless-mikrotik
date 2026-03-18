@@ -1,0 +1,50 @@
+name: Build Zig Artifacts
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    paths:
+      - "dns-gen.zig"
+      - "conf-gen.zig"
+      - "build.zig"
+      - "build.zig.zon"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Restore
+        uses: actions/cache/restore@v5
+        id: cache
+        with:
+          key: zig-artifacts-${{ runner.os }}-${{ hashFiles('dns-gen.zig', 'conf-gen.zig', 'build.zig', 'build.zig.zon') }}
+          path: zig-out/bin/*
+
+      - name: Setup Zig
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Compile
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: zig build -Drelease
+
+      - name: Save
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          path: zig-out/bin/*
+
+      - name: Upload
+        uses: actions/upload-artifact@v6
+        with:
+          retention-days: 1
+          if-no-files-found: error
+          name: zig-artifacts
+          path: zig-out/bin/*

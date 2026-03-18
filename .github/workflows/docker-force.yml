@@ -14,20 +14,20 @@ on:
           - all
 
 jobs:
-  dns-gen:
-    uses: ./.github/workflows/dns-gen.yml
+  zig-artifacts:
+    uses: ./.github/workflows/artifacts.yml
 
   build:
-    needs: dns-gen
+    needs: zig-artifacts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: DNS Gen
+      - name: Zig Artifacts
         uses: actions/download-artifact@v6
         with:
-          name: dns-gen-binaries
+          name: zig-artifacts
 
       - name: Set version
         id: set-version

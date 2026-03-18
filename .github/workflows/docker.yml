@@ -6,11 +6,11 @@ on:
     - cron: "5 4,12,20 * * *"
 
 jobs:
-  dns-gen:
-    uses: ./.github/workflows/dns-gen.yml
+  zig-artifacts:
+    uses: ./.github/workflows/artifacts.yml
 
   build:
-    needs: dns-gen
+    needs: zig-artifacts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,11 +20,11 @@ jobs:
         id: up-version
         run: bash .github/workflows/update_tag.sh
 
-      - name: DNS Gen
+      - name: Zig Artifacts
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
         uses: actions/download-artifact@v6
         with:
-          name: dns-gen-binaries
+          name: zig-artifacts
 
       - name: Set version
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'

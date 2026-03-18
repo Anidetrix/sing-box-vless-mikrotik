@@ -1,0 +1,7 @@
+.{
+    .name = .sing_box_vless_mikrotik,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.15.2",
+    .paths = .{""},
+    .fingerprint = 0xa78e795ed4342796,
+}

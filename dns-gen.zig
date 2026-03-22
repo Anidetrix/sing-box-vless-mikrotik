@@ -41,7 +41,7 @@ pub fn main() !void {
                 .type = uri.scheme,
                 .server = host,
                 .server_port = uri.port,
-                .detour = "vless-out",
+                .detour = "out",
             };
 
             try servers.append(arena, server);

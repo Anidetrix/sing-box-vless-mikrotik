@@ -6,7 +6,7 @@ on:
   push:
     paths:
       - "dns-gen.zig"
-      - "conf-gen.zig"
+      - "out-gen.zig"
       - "build.zig"
       - "build.zig.zon"
 
@@ -21,7 +21,7 @@ jobs:
         uses: actions/cache/restore@v5
         id: cache
         with:
-          key: zig-artifacts-${{ runner.os }}-${{ hashFiles('dns-gen.zig', 'conf-gen.zig', 'build.zig', 'build.zig.zon') }}
+          key: zig-artifacts-${{ runner.os }}-${{ hashFiles('dns-gen.zig', 'out-gen.zig', 'build.zig', 'build.zig.zon') }}
           path: zig-out/bin/*
 
       - name: Setup Zig

@@ -8,7 +8,10 @@ DNS="${DNS:-8.8.8.8,8.8.4.4}"
 # tun
 TUN_STACK="${TUN_STACK:-system}"
 
-# vless
+# url
+URL="${URL:-}"
+
+# env
 REMOTE_ADDRESS="${REMOTE_ADDRESS:-}"
 REMOTE_PORT="${REMOTE_PORT:-443}"
 ID="${ID:-}"
@@ -23,7 +26,7 @@ WHITELIST_MODE="${WHITELIST_MODE:-}"
 RULESETS="${RULESETS:-}"
 DOMAINS="${DOMAINS:-}"
 
-out="vless-out"
+out="out"
 out_rules="bypass"
 if [ -n "${WHITELIST_MODE}" ]; then
 	_out=${out}
@@ -67,34 +70,6 @@ cat << EOF > /singbox.json
       "listen_port": 1080
     }
   ],
-  "outbounds": [
-    {
-      "type": "vless",
-      "tag": "vless-out",
-      "server": "${REMOTE_ADDRESS}",
-      "server_port": ${REMOTE_PORT},
-      "uuid": "${ID}",
-      "flow": "${FLOW}",
-      "tls": {
-        "enabled": true,
-        "server_name": "${SERVER_NAME}",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "${FINGER_PRINT}"
-        },
-        "reality": {
-          "enabled": true,
-          "public_key": "${PUBLIC_KEY}",
-          "short_id": "${SHORT_ID}"
-        }
-      },
-      "packet_encoding": "xudp"
-    },
-    {
-      "type": "direct",
-      "tag": "bypass"
-    }
-  ],
   "route": {
     "default_domain_resolver": "dns-local",
     "auto_detect_interface": true,
@@ -130,6 +105,12 @@ mergeconf() {
 add_dns() {
 	local tmpfile=$(mktemp)
 	dns-gen "$1" > ${tmpfile}
+	mergeconf ${tmpfile}
+}
+
+add_out() {
+	local tmpfile=$(mktemp)
+	out-gen "$1" > ${tmpfile}
 	mergeconf ${tmpfile}
 }
 
@@ -176,7 +157,7 @@ add_rulesets() {
 			        "type": "remote",
 			        "format": "${format}",
 			        "url": "${url}",
-			        "download_detour": "vless-out",
+			        "download_detour": "out",
 			        "update_interval": "2h"
 			      }
 			    ]
@@ -190,6 +171,7 @@ add_rulesets() {
 }
 
 add_dns ${DNS}
+add_out ${URL}
 [ -n "${DOMAINS}" ] && add_rule domain_suffix ${DOMAINS}
 [ -n "${RULESETS}" ] && add_rulesets ${RULESETS}
 sing-box check -c /singbox.json --disable-color || exit 1

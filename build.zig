@@ -16,15 +16,17 @@ pub fn build(b: *std.Build) !void {
     };
 
     inline for (targets) |t| {
-        addExecutable(b, "dns-gen", t, b.path("dns-gen.zig"), optimize);
+        addExecutable(b, "dns-gen", b.path("dns-gen.zig"), t, optimize);
+        addExecutable(b, "out-gen", b.path("out-gen.zig"), t, optimize);
     }
 
     // Check
     const check = b.step("check", "Check if app compiles");
     addCheck(b, check, b.path("dns-gen.zig"), target, optimize);
+    addCheck(b, check, b.path("out-gen.zig"), target, optimize);
 }
 
-fn addExecutable(b: *std.Build, n: []const u8, t: Target, root: ?std.Build.LazyPath, optimize: std.builtin.OptimizeMode) void {
+fn addExecutable(b: *std.Build, n: []const u8, root: ?std.Build.LazyPath, t: Target, optimize: std.builtin.OptimizeMode) void {
     const target = b.resolveTargetQuery(t.query);
     const name = b.fmt("{s}-{s}", .{ n, t.name });
     const mod = b.createModule(.{

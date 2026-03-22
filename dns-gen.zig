@@ -61,5 +61,9 @@ pub fn main() !void {
     const stdout = &stdout_writer.interface;
     defer stdout.flush() catch {};
 
-    try std.json.Stringify.value(.{ .dns = .{ .servers = servers.items } }, .{ .whitespace = .indent_2, .emit_null_optional_fields = false }, stdout);
+    try std.json.Stringify.value(
+        .{ .dns = .{ .servers = servers.items } },
+        .{ .emit_null_optional_fields = false, .whitespace = .indent_2 },
+        stdout,
+    );
 }

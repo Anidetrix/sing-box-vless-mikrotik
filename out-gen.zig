@@ -156,7 +156,7 @@ pub fn main() !void {
 
     const bypass = .{ .type = "direct", .tag = "bypass" };
     const out: union(enum) { h: Hysteria2, v: VLESS } = if (args.next()) |u| b: {
-        const uri = std.Uri.parse(u) catch return error.InvalidURL;
+        const uri = std.Uri.parse(u) catch break :b .{ .v = try env(arena) };
         if (is_vless(uri)) break :b .{ .v = try vless(arena, uri) };
         if (is_hy2(uri)) break :b .{ .h = try hy2(arena, uri) };
         return error.UnsupportedURL;

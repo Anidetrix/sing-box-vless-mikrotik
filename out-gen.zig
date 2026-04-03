@@ -58,8 +58,8 @@ pub fn hy2(arena: std.mem.Allocator, uri: std.Uri) !Hysteria2 {
     const down, const up = b: {
         const bandwidth = std.process.getEnvVarOwned(arena, "BANDWIDTH") catch break :b .{ null, null };
         var iter = std.mem.splitScalar(u8, bandwidth, '/');
-        const down = std.fmt.parseInt(usize, iter.rest(), 10) catch break :b .{ null, null };
-        const up = std.fmt.parseInt(usize, iter.first(), 10) catch down;
+        const down = std.fmt.parseInt(usize, iter.first(), 10) catch break :b .{ null, null };
+        const up = std.fmt.parseInt(usize, iter.rest(), 10) catch down;
         break :b .{ down, up };
     };
     return .{

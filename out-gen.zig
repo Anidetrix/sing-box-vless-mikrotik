@@ -22,6 +22,8 @@ const Hysteria2 = struct {
     server: []const u8,
     server_port: u16,
     password: []const u8,
+    up_mbps: ?usize,
+    down_mbps: ?usize,
     obfs: ?struct { type: []const u8, password: []const u8 },
     tls: struct {
         enabled: bool = true,
@@ -31,104 +33,82 @@ const Hysteria2 = struct {
     },
 };
 
-pub fn vless(arena: std.mem.Allocator, uri: std.Uri) !VLESS {
-    const uuid = try (uri.user orelse return error.MissingUser).toRawMaybeAlloc(arena);
-    const address = try (uri.host orelse return error.MissingAddress).toRawMaybeAlloc(arena);
-    const query = (uri.query orelse return error.MissingQuery).percent_encoded;
+pub fn parseQuery(arena: std.mem.Allocator, query: std.Uri.Component) !std.StringHashMap([]u8) {
+    var result: std.StringHashMap([]u8) = .init(arena);
+    errdefer result.deinit();
 
-    const Params = struct { pbk: ?[]const u8 = null, sid: ?[]const u8 = null, sni: ?[]const u8 = null, fp: ?[]const u8 = null, flow: ?[]const u8 = null };
-    var params: Params = .{};
-    var params_iter = std.mem.splitScalar(u8, query, '&');
-    while (params_iter.next()) |pair| {
+    var iter = std.mem.splitScalar(u8, query.percent_encoded, '&');
+    while (iter.next()) |pair| {
         var kv = std.mem.splitScalar(u8, pair, '=');
         const key = kv.first();
         if (key.len == 0) continue;
-
-        const value_raw = try std.mem.replaceOwned(u8, arena, kv.rest(), "+", " ");
-        const value = std.Uri.percentDecodeInPlace(value_raw);
-        if (value.len == 0) continue;
-
-        if (std.meta.stringToEnum(std.meta.FieldEnum(Params), key)) |field| {
-            switch (field) {
-                inline else => |f| @field(params, @tagName(f)) = value,
-            }
-        }
+        const value = try arena.dupe(u8, kv.rest());
+        std.mem.replaceScalar(u8, value, '+', ' ');
+        try result.put(key, std.Uri.percentDecodeInPlace(value));
     }
 
+    return result;
+}
+
+pub fn hy2(arena: std.mem.Allocator, uri: std.Uri) !Hysteria2 {
+    const query = if (uri.query) |q| try parseQuery(arena, q) else return error.MissingQuery;
+    const address = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else return error.MissingAddress;
+    const user = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
+    const insecure = if (query.get("insecure")) |i| std.mem.eql(u8, i, "1") else false;
+    const up, const down = b: {
+        const bandwidth = query.get("BANDWIDTH") orelse break :b .{ null, null };
+        var iter = std.mem.splitScalar(u8, bandwidth, '/');
+        const up = std.fmt.parseInt(usize, iter.first(), 10) catch break :b .{ null, null };
+        const down = std.fmt.parseInt(usize, iter.rest(), 10) catch up;
+        break :b .{ up, down };
+    };
+    return .{
+        .server = address,
+        .server_port = uri.port orelse 443,
+        .password = user,
+        .up_mbps = up,
+        .down_mbps = down,
+        .obfs = if (query.get("obfs-password")) |p| .{ .type = query.get("obfs") orelse "salamander", .password = p } else null,
+        .tls = .{ .server_name = query.get("sni") orelse address, .insecure = insecure },
+    };
+}
+
+pub fn vless(arena: std.mem.Allocator, uri: std.Uri) !VLESS {
+    const query = if (uri.query) |q| try parseQuery(arena, q) else return error.MissingQuery;
+    const address = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else return error.MissingAddress;
+    const uuid = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
+    const sni = query.get("sni") orelse return error.MissingServerName;
+    const pbk = query.get("pbk") orelse return error.MissingPublicKey;
+    const sid = query.get("sid") orelse return error.MissingShortID;
     return .{
         .server = address,
         .server_port = uri.port orelse 443,
         .uuid = uuid,
-        .flow = params.flow orelse "xtls-rprx-vision",
+        .flow = query.get("flow") orelse "xtls-rprx-vision",
         .tls = .{
-            .server_name = params.sni orelse return error.MissingServerName,
-            .utls = .{ .fingerprint = params.fp orelse "chrome" },
-            .reality = .{
-                .public_key = params.pbk orelse return error.MissingPublicKey,
-                .short_id = params.sid orelse return error.MissingShortID,
-            },
+            .server_name = sni,
+            .utls = .{ .fingerprint = query.get("fp") orelse "chrome" },
+            .reality = .{ .public_key = pbk, .short_id = sid },
         },
-    };
-}
-
-pub fn hy2(arena: std.mem.Allocator, uri: std.Uri) !Hysteria2 {
-    const uuid = try (uri.user orelse return error.MissingUser).toRawMaybeAlloc(arena);
-    const address = try (uri.host orelse return error.MissingAddress).toRawMaybeAlloc(arena);
-    const query = (uri.query orelse return error.MissingQuery).percent_encoded;
-
-    const Params = struct { obfs: ?[]const u8 = null, @"obfs-password": ?[]const u8 = null, sni: ?[]const u8 = null, insecure: bool = false };
-    var params: Params = .{};
-    var params_iter = std.mem.splitScalar(u8, query, '&');
-    while (params_iter.next()) |pair| {
-        var kv = std.mem.splitScalar(u8, pair, '=');
-        const key = kv.first();
-        if (key.len == 0) continue;
-
-        const value_raw = try std.mem.replaceOwned(u8, arena, kv.rest(), "+", " ");
-        const value = std.Uri.percentDecodeInPlace(value_raw);
-        if (value.len == 0) continue;
-
-        if (std.meta.stringToEnum(std.meta.FieldEnum(Params), key)) |field| {
-            switch (field) {
-                inline else => |f| @field(params, @tagName(f)) = value,
-                .insecure => params.insecure = std.mem.eql(u8, value, "1"),
-            }
-        }
-    }
-
-    return .{
-        .server = address,
-        .server_port = uri.port orelse 443,
-        .password = uuid,
-        .obfs = if (params.@"obfs-password") |p| .{ .type = params.obfs orelse "salamander", .password = p } else null,
-        .tls = .{ .server_name = params.sni orelse address, .insecure = params.insecure },
     };
 }
 
 pub fn env(arena: std.mem.Allocator) !VLESS {
     const map = try std.process.getEnvMap(arena);
-
     const uuid = map.get("ID") orelse return error.MissingUser;
     const address = map.get("REMOTE_ADDRESS") orelse return error.MissingAddress;
     const server_name = map.get("SERVER_NAME") orelse return error.MissingServerName;
     const public_key = map.get("PUBLIC_KEY") orelse return error.MissingPublicKey;
     const short_id = map.get("SHORT_ID") orelse return error.MissingShortID;
-
-    const flow = map.get("FLOW") orelse "xtls-rprx-vision";
-    const fingerprint = map.get("FINGER_PRINT") orelse "chrome";
-    const port = b: {
-        const str = map.get("REMOTE_PORT") orelse break :b 443;
-        break :b try std.fmt.parseInt(u16, str, 10);
-    };
-
+    const port = if (map.get("REMOTE_PORT")) |p| try std.fmt.parseInt(u16, p, 10) else 443;
     return .{
         .server = address,
         .server_port = port,
         .uuid = uuid,
-        .flow = flow,
+        .flow = map.get("FLOW") orelse "xtls-rprx-vision",
         .tls = .{
             .server_name = server_name,
-            .utls = .{ .fingerprint = fingerprint },
+            .utls = .{ .fingerprint = map.get("FINGER_PRINT") orelse "chrome" },
             .reality = .{ .public_key = public_key, .short_id = short_id },
         },
     };

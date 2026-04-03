@@ -56,7 +56,7 @@ pub fn hy2(arena: std.mem.Allocator, uri: std.Uri) !Hysteria2 {
     const user = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
     const insecure = if (query.get("insecure")) |i| std.mem.eql(u8, i, "1") else false;
     const up, const down = b: {
-        const bandwidth = query.get("BANDWIDTH") orelse break :b .{ null, null };
+        const bandwidth = std.process.getEnvVarOwned(arena, "BANDWIDTH") catch break :b .{ null, null };
         var iter = std.mem.splitScalar(u8, bandwidth, '/');
         const up = std.fmt.parseInt(usize, iter.first(), 10) catch break :b .{ null, null };
         const down = std.fmt.parseInt(usize, iter.rest(), 10) catch up;

@@ -9,12 +9,15 @@ const Server = struct {
     detour: ?[]const u8 = null,
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init.Minimal) !void {
+    var threaded: std.Io.Threaded = .init_single_threaded;
+    const io = threaded.io();
+
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const arena = aa.allocator();
     defer aa.deinit();
 
-    var args = try std.process.argsWithAllocator(arena);
+    var args = try init.args.iterateAllocator(arena);
     defer args.deinit();
     _ = args.skip();
 
@@ -31,11 +34,7 @@ pub fn main() !void {
             const uri = std.Uri.parse(url) catch continue;
 
             const tag = try std.fmt.allocPrint(arena, "dns-proxy-{}", .{index});
-
-            const host = if (uri.host) |host| switch (host) {
-                .raw, .percent_encoded => |h| h,
-            } else null;
-
+            const host = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else null;
             const server = Server{
                 .tag = tag,
                 .type = uri.scheme,
@@ -57,7 +56,7 @@ pub fn main() !void {
     });
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = std.Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     defer stdout.flush() catch {};
 

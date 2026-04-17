@@ -50,13 +50,13 @@ pub fn parseQuery(arena: std.mem.Allocator, query: std.Uri.Component) !std.Strin
     return result;
 }
 
-pub fn hy2(arena: std.mem.Allocator, uri: std.Uri) !Hysteria2 {
+pub fn hy2(arena: std.mem.Allocator, uri: std.Uri, envs: *const std.process.Environ.Map) !Hysteria2 {
     const query = if (uri.query) |q| try parseQuery(arena, q) else return error.MissingQuery;
     const address = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else return error.MissingAddress;
     const user = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
     const insecure = if (query.get("insecure")) |i| std.mem.eql(u8, i, "1") else false;
     const down, const up = b: {
-        const bandwidth = std.process.getEnvVarOwned(arena, "BANDWIDTH") catch break :b .{ null, null };
+        const bandwidth = envs.get("BANDWIDTH") orelse break :b .{ null, null };
         var iter = std.mem.splitScalar(u8, bandwidth, '/');
         const down = std.fmt.parseInt(usize, iter.first(), 10) catch break :b .{ null, null };
         const up = std.fmt.parseInt(usize, iter.rest(), 10) catch down;
@@ -93,8 +93,7 @@ pub fn vless(arena: std.mem.Allocator, uri: std.Uri) !VLESS {
     };
 }
 
-pub fn env(arena: std.mem.Allocator) !VLESS {
-    const map = try std.process.getEnvMap(arena);
+pub fn env(map: *const std.process.Environ.Map) !VLESS {
     const uuid = map.get("ID") orelse return error.MissingUser;
     const address = map.get("REMOTE_ADDRESS") orelse return error.MissingAddress;
     const server_name = map.get("SERVER_NAME") orelse return error.MissingServerName;
@@ -125,25 +124,31 @@ pub inline fn is_hy2(uri: std.Uri) bool {
     return false;
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init.Minimal) !void {
+    var threaded: std.Io.Threaded = .init_single_threaded;
+    const io = threaded.io();
+
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const arena = aa.allocator();
     defer aa.deinit();
 
-    var args = try std.process.argsWithAllocator(arena);
+    var args = try init.args.iterateAllocator(arena);
     defer args.deinit();
     _ = args.skip();
 
+    var envs = try init.environ.createMap(arena);
+    defer envs.deinit();
+
     const bypass = .{ .type = "direct", .tag = "bypass" };
     const out: union(enum) { h: Hysteria2, v: VLESS } = if (args.next()) |u| b: {
-        const uri = std.Uri.parse(u) catch break :b .{ .v = try env(arena) };
+        const uri = std.Uri.parse(u) catch break :b .{ .v = try env(&envs) };
         if (is_vless(uri)) break :b .{ .v = try vless(arena, uri) };
-        if (is_hy2(uri)) break :b .{ .h = try hy2(arena, uri) };
+        if (is_hy2(uri)) break :b .{ .h = try hy2(arena, uri, &envs) };
         return error.UnsupportedURL;
-    } else .{ .v = try env(arena) };
+    } else .{ .v = try env(&envs) };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = std.Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     defer stdout.flush() catch {};
 

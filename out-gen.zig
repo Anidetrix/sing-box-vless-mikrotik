@@ -33,16 +33,15 @@ const Hysteria2 = struct {
     },
 };
 
-pub fn parseQuery(arena: std.mem.Allocator, query: std.Uri.Component) !std.StringHashMap([]u8) {
+pub fn parseQuery(arena: std.mem.Allocator, query: std.Uri.Component) std.mem.Allocator.Error!std.StringHashMap([]u8) {
     var result: std.StringHashMap([]u8) = .init(arena);
     errdefer result.deinit();
 
     var iter = std.mem.splitScalar(u8, query.percent_encoded, '&');
     while (iter.next()) |pair| {
-        var kv = std.mem.splitScalar(u8, pair, '=');
-        const key = kv.first();
+        const key, const v = std.mem.cutScalar(u8, pair, '=') orelse continue;
         if (key.len == 0) continue;
-        const value = try arena.dupe(u8, kv.rest());
+        const value = try arena.dupe(u8, v);
         std.mem.replaceScalar(u8, value, '+', ' ');
         try result.put(key, std.Uri.percentDecodeInPlace(value));
     }
@@ -50,7 +49,8 @@ pub fn parseQuery(arena: std.mem.Allocator, query: std.Uri.Component) !std.Strin
     return result;
 }
 
-pub fn hy2(arena: std.mem.Allocator, uri: std.Uri, envs: *const std.process.Environ.Map) !Hysteria2 {
+pub fn hy2(arena: std.mem.Allocator, envs: *const std.process.Environ.Map, short: []const u8) !Hysteria2 {
+    const uri = try std.Uri.parseAfterScheme(&.{}, short);
     const query = if (uri.query) |q| try parseQuery(arena, q) else return error.MissingQuery;
     const address = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else return error.MissingAddress;
     const user = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
@@ -73,7 +73,8 @@ pub fn hy2(arena: std.mem.Allocator, uri: std.Uri, envs: *const std.process.Envi
     };
 }
 
-pub fn vless(arena: std.mem.Allocator, uri: std.Uri) !VLESS {
+pub fn vless(arena: std.mem.Allocator, short: []const u8) !VLESS {
+    const uri = try std.Uri.parseAfterScheme(&.{}, short);
     const query = if (uri.query) |q| try parseQuery(arena, q) else return error.MissingQuery;
     const address = if (uri.host) |h| try h.toRawMaybeAlloc(arena) else return error.MissingAddress;
     const uuid = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
@@ -113,14 +114,14 @@ pub fn env(map: *const std.process.Environ.Map) !VLESS {
     };
 }
 
-pub inline fn is_vless(uri: std.Uri) bool {
-    if (std.mem.eql(u8, uri.scheme, "vless")) return true;
+pub inline fn is_vless(scheme: []const u8) bool {
+    if (std.mem.eql(u8, scheme, "vless")) return true;
     return false;
 }
 
-pub inline fn is_hy2(uri: std.Uri) bool {
-    if (std.mem.eql(u8, uri.scheme, "hysteria2")) return true;
-    if (std.mem.eql(u8, uri.scheme, "hy2")) return true;
+pub inline fn is_hy2(scheme: []const u8) bool {
+    if (std.mem.eql(u8, scheme, "hysteria2")) return true;
+    if (std.mem.eql(u8, scheme, "hy2")) return true;
     return false;
 }
 
@@ -141,9 +142,9 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     const bypass = .{ .type = "direct", .tag = "bypass" };
     const out: union(enum) { h: Hysteria2, v: VLESS } = if (args.next()) |u| b: {
-        const uri = std.Uri.parse(u) catch break :b .{ .v = try env(&envs) };
-        if (is_vless(uri)) break :b .{ .v = try vless(arena, uri) };
-        if (is_hy2(uri)) break :b .{ .h = try hy2(arena, uri, &envs) };
+        const scheme, const short = std.mem.cut(u8, u, "://") orelse break :b .{ .v = try env(&envs) };
+        if (is_vless(scheme)) break :b .{ .v = try vless(arena, short) };
+        if (is_hy2(scheme)) break :b .{ .h = try hy2(arena, &envs, short) };
         return error.UnsupportedURL;
     } else .{ .v = try env(&envs) };
 

@@ -142,7 +142,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     const bypass = .{ .type = "direct", .tag = "bypass" };
     const out: union(enum) { h: Hysteria2, v: VLESS } = if (args.next()) |u| b: {
-        const scheme, const short = std.mem.cut(u8, u, "://") orelse break :b .{ .v = try env(&envs) };
+        const scheme, const short = std.mem.cutScalar(u8, u, ':') orelse break :b .{ .v = try env(&envs) };
         if (is_vless(scheme)) break :b .{ .v = try vless(arena, short) };
         if (is_hy2(scheme)) break :b .{ .h = try hy2(arena, &envs, short) };
         return error.UnsupportedURL;

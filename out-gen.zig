@@ -11,7 +11,7 @@ const VLESS = struct {
         enabled: bool = true,
         server_name: []const u8,
         utls: struct { enabled: bool = true, fingerprint: []const u8 },
-        reality: struct { enabled: bool = true, public_key: []const u8, short_id: []const u8 },
+        reality: struct { enabled: bool = true, public_key: []const u8, short_id: ?[]const u8 },
     },
     packet_encoding: []const u8 = "xudp",
 };
@@ -80,7 +80,6 @@ pub fn vless(arena: std.mem.Allocator, short: []const u8) !VLESS {
     const uuid = if (uri.user) |u| try u.toRawMaybeAlloc(arena) else return error.MissingUser;
     const sni = query.get("sni") orelse return error.MissingServerName;
     const pbk = query.get("pbk") orelse return error.MissingPublicKey;
-    const sid = query.get("sid") orelse return error.MissingShortID;
     return .{
         .server = address,
         .server_port = uri.port orelse 443,
@@ -89,7 +88,7 @@ pub fn vless(arena: std.mem.Allocator, short: []const u8) !VLESS {
         .tls = .{
             .server_name = sni,
             .utls = .{ .fingerprint = query.get("fp") orelse "chrome" },
-            .reality = .{ .public_key = pbk, .short_id = sid },
+            .reality = .{ .public_key = pbk, .short_id = query.get("sid") },
         },
     };
 }

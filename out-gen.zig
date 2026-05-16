@@ -98,7 +98,6 @@ pub fn env(map: *const std.process.Environ.Map) !VLESS {
     const address = map.get("REMOTE_ADDRESS") orelse return error.MissingAddress;
     const server_name = map.get("SERVER_NAME") orelse return error.MissingServerName;
     const public_key = map.get("PUBLIC_KEY") orelse return error.MissingPublicKey;
-    const short_id = map.get("SHORT_ID") orelse return error.MissingShortID;
     const port = if (map.get("REMOTE_PORT")) |p| try std.fmt.parseInt(u16, p, 10) else 443;
     return .{
         .server = address,
@@ -108,7 +107,7 @@ pub fn env(map: *const std.process.Environ.Map) !VLESS {
         .tls = .{
             .server_name = server_name,
             .utls = .{ .fingerprint = map.get("FINGER_PRINT") orelse "chrome" },
-            .reality = .{ .public_key = public_key, .short_id = short_id },
+            .reality = .{ .public_key = public_key, .short_id = map.get("SHORT_ID") },
         },
     };
 }

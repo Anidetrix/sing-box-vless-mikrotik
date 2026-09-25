@@ -6,7 +6,6 @@ const VLESS = struct {
     server: []const u8,
     server_port: u16,
     uuid: []const u8,
-    flow: []const u8,
     tls: struct {
         enabled: bool = true,
         server_name: []const u8,
@@ -14,7 +13,7 @@ const VLESS = struct {
         reality: struct { enabled: bool = true, public_key: []const u8, short_id: ?[]const u8 },
     },
     transport: ?struct { type: []const u8 = "grpc", service_name: []const u8 },
-    packet_encoding: []const u8 = "xudp",
+    flow: ?[]const u8,
 };
 
 const Hysteria2 = struct {
@@ -85,13 +84,17 @@ pub fn vless(arena: std.mem.Allocator, short: []const u8) !VLESS {
         .server = address,
         .server_port = uri.port orelse 443,
         .uuid = uuid,
-        .flow = query.get("flow") orelse "xtls-rprx-vision",
         .tls = .{
             .server_name = sni,
             .utls = .{ .fingerprint = query.get("fp") orelse "chrome" },
             .reality = .{ .public_key = pbk, .short_id = query.get("sid") },
         },
         .transport = if (query.get("serviceName")) |n| .{ .service_name = n } else null,
+        .flow = b: {
+            if (query.get("flow")) |f| break :b f;
+            if (query.get("serviceName")) |_| break :b null;
+            break :b "xtls-rprx-vision";
+        },
     };
 }
 
@@ -105,13 +108,13 @@ pub fn env(map: *const std.process.Environ.Map) !VLESS {
         .server = address,
         .server_port = port,
         .uuid = uuid,
-        .flow = map.get("FLOW") orelse "xtls-rprx-vision",
         .tls = .{
             .server_name = server_name,
             .utls = .{ .fingerprint = map.get("FINGER_PRINT") orelse "chrome" },
             .reality = .{ .public_key = public_key, .short_id = map.get("SHORT_ID") },
         },
         .transport = null,
+        .flow = map.get("FLOW") orelse "xtls-rprx-vision",
     };
 }
 

@@ -13,6 +13,7 @@ const VLESS = struct {
         utls: struct { enabled: bool = true, fingerprint: []const u8 },
         reality: struct { enabled: bool = true, public_key: []const u8, short_id: ?[]const u8 },
     },
+    transport: ?struct { type: []const u8 = "grpc", service_name: []const u8 },
     packet_encoding: []const u8 = "xudp",
 };
 
@@ -90,6 +91,7 @@ pub fn vless(arena: std.mem.Allocator, short: []const u8) !VLESS {
             .utls = .{ .fingerprint = query.get("fp") orelse "chrome" },
             .reality = .{ .public_key = pbk, .short_id = query.get("sid") },
         },
+        .transport = if (query.get("serviceName")) |n| .{ .service_name = n } else null,
     };
 }
 
@@ -109,6 +111,7 @@ pub fn env(map: *const std.process.Environ.Map) !VLESS {
             .utls = .{ .fingerprint = map.get("FINGER_PRINT") orelse "chrome" },
             .reality = .{ .public_key = public_key, .short_id = map.get("SHORT_ID") },
         },
+        .transport = null,
     };
 }
 

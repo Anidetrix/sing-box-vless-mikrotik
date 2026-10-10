@@ -22,10 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Zig Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: zig-artifacts
 
@@ -41,7 +41,7 @@ jobs:
 
       - name: Setup Docker meta (release)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ steps.set-dockerhub.outputs.name }}
@@ -52,7 +52,7 @@ jobs:
 
       - name: Setup Docker meta (dev)
         id: meta_dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ steps.set-dockerhub.outputs.name }}
@@ -62,19 +62,19 @@ jobs:
             type=raw,value=dev
 
       - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -82,7 +82,7 @@ jobs:
 
       - name: Build and Push (release)
         if: inputs.version == 'release' || inputs.version == 'all'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -95,7 +95,7 @@ jobs:
 
       - name: Build and Push (dev)
         if: inputs.version == 'dev' || inputs.version == 'all'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -107,7 +107,7 @@ jobs:
             SINGBOX_VERSION=${{ steps.set-version.outputs.version_dev }}
 
       - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

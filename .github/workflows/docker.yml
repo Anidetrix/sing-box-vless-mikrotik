@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Update tags and commit changes
         id: up-version
@@ -22,7 +22,7 @@ jobs:
 
       - name: Zig Artifacts
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: zig-artifacts
 
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Docker meta (release)
         if: steps.up-version.outputs.status == 'success'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ steps.set-dockerhub.outputs.name }}
@@ -53,7 +53,7 @@ jobs:
       - name: Setup Docker meta (dev)
         if: steps.up-version.outputs.status_dev == 'success'
         id: meta_dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ steps.set-dockerhub.outputs.name }}
@@ -64,22 +64,22 @@ jobs:
 
       - name: Setup QEMU
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Setup Docker Buildx
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build and Push (release)
         if: steps.up-version.outputs.status == 'success'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -100,7 +100,7 @@ jobs:
 
       - name: Build and Push (dev)
         if: steps.up-version.outputs.status_dev == 'success'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -113,7 +113,7 @@ jobs:
 
       - name: Docker Hub Description
         if: steps.up-version.outputs.status == 'success' || steps.up-version.outputs.status_dev == 'success'
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
